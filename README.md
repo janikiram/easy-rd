@@ -1,27 +1,72 @@
-# Easy RD - Database Relationship Diagram Tool
+# Easy RD - Interactive Database Schema Designer
 
-Easy RD is a web-based tool for creating and sharing database relationship diagrams using DBML (Database Markup Language). It provides an intuitive interface for designing database schemas with real-time visualization.
+Easy RD is an open-source, web-based database schema designer that makes creating and sharing Entity-Relationship Diagrams effortless. Built with modern web technologies, it provides a seamless experience for database design and collaboration.
+
+🚀 **Live Demo**: [https://easyrd.dev](https://easyrd.dev)
 
 ![Easy RD Preview](static/easy-rd.png)
 
-## Features
+## ✨ Features
 
-- 📝 **DBML Editor**: Write database schemas using DBML syntax with syntax highlighting
-- 🎨 **Real-time Visualization**: See your database diagram update as you type
+- 📝 **DBML Editor**: Write database schemas using DBML (Database Markup Language) with full syntax highlighting and auto-completion
+- 🎨 **Real-time Visualization**: See your database diagram update instantly as you type
 - 🔗 **Shareable Projects**: Share your diagrams with others via unique URLs
 - 👥 **Collaboration**: Invite team members to view or edit your diagrams
-- 🔒 **Permission Management**: Control who can view, edit, or manage your projects
+- 🔒 **Permission Management**: Fine-grained control over who can view, edit, or manage your projects
 - 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices
+- 🌐 **Resource Adapter Pattern**: Flexible data source abstraction - use databases, APIs, or any backend
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Frontend**: SvelteKit, TypeScript, Tailwind CSS
-- **Backend**: SvelteKit API routes
-- **Database**: Drizzle ORM (supports multiple databases)
-- **Authentication**: Auth.js (OAuth providers)
-- **Visualization**: Custom diagram renderer using @meursyphus/flitter
+### Core Technologies
 
-## Getting Started
+- **Framework**: [SvelteKit](https://kit.svelte.dev/) - Fast, modern web framework
+- **Language**: TypeScript - Type-safe development
+- **Styling**: Tailwind CSS - Utility-first CSS framework
+- **Authentication**: [Auth.js](https://authjs.dev/) - Flexible authentication for web apps
+
+### Key Dependencies
+
+#### 🎨 Diagram Rendering - Flitter
+- **Library**: [@meursyphus/flitter](https://github.com/meursyphus/flitter) & @meursyphus/flitter-svelte
+- **Purpose**: Provides a Flutter-like widget system for building complex UI layouts
+- **Usage**: Powers the interactive database diagram visualization with draggable tables and connections
+
+#### 📝 Database Schema Language - DBML
+- **Library**: [@dbml/core](https://www.dbml.org/)
+- **Purpose**: Database Markup Language parser for defining database schemas
+- **Features**: 
+  - Human-readable syntax for database design
+  - Supports tables, relationships, indexes, and more
+  - Converts DBML to SQL or other formats
+
+#### 💻 Code Editor - Monaco Editor
+- **Library**: [monaco-editor](https://microsoft.github.io/monaco-editor/)
+- **Purpose**: Powers the DBML code editor with VS Code-like features
+- **Features**:
+  - Syntax highlighting for DBML
+  - Auto-completion
+  - Error highlighting
+  - Code folding
+
+### Data Layer
+
+- **ORM**: [Drizzle ORM](https://orm.drizzle.team/) - Type-safe SQL query builder
+- **Database Abstraction**: Resource Adapter pattern supporting:
+  - Cloudflare D1 (default)
+  - PostgreSQL
+  - MySQL
+  - REST APIs
+  - GraphQL endpoints
+  - Any custom data source
+
+### Infrastructure
+
+- **Deployment**: Cloudflare Pages
+- **Database**: Cloudflare D1 (SQLite at the edge)
+- **Edge Runtime**: Cloudflare Workers
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -68,21 +113,28 @@ Easy RD is a web-based tool for creating and sharing database relationship diagr
 
 Visit `http://localhost:5173` to see the application.
 
-## Configuration
+## 🏗️ Architecture
 
-### Authentication
+### Resource Adapter Pattern
 
-Easy RD uses Auth.js for authentication. See [src/lib/auth/README.md](src/lib/auth/README.md) for detailed setup instructions.
+Easy RD uses a flexible Resource Adapter pattern that abstracts data operations, allowing you to use any backend:
 
-### Database
+```typescript
+// Use the default Drizzle adapter with Cloudflare D1
+const adapter = new DrizzleAdapter(db);
 
-The project uses Drizzle ORM and can work with multiple databases. See [src/lib/server/drizzle/README.md](src/lib/server/drizzle/README.md) for database configuration options.
+// Or create your own adapter for REST APIs
+const adapter = new APIAdapter({ 
+  apiUrl: 'https://api.your-backend.com' 
+});
 
-### Notifications
+// Or use GraphQL
+const adapter = new GraphQLAdapter({ 
+  endpoint: 'https://graphql.your-backend.com' 
+});
+```
 
-The notification system is abstracted to support multiple providers (Discord, Slack, Email, etc.). See [src/lib/server/service/notification-service.ts](src/lib/server/service/notification-service.ts) for implementation examples.
-
-## Development
+See [Resource Adapters Documentation](docs/resource-adapters.md) for implementation details.
 
 ### Project Structure
 
@@ -92,48 +144,80 @@ src/
 │   ├── api/          # API client
 │   ├── auth/         # Authentication setup
 │   ├── components/   # Reusable components
+│   │   ├── diagram/  # Flitter-based diagram components
+│   │   ├── editor/   # Monaco editor wrapper
+│   │   └── ...
 │   ├── dbml/         # DBML parser and types
 │   ├── server/       # Server-side code
+│   │   ├── adapter/  # Resource adapter implementations
+│   │   └── ...
 │   └── ui/           # UI components
 ├── routes/           # SvelteKit routes
 └── stories/          # Storybook stories
 ```
+
+## 🔧 Configuration
+
+### Authentication
+
+Easy RD uses Auth.js for authentication. Currently supports:
+- GitHub OAuth
+- Google OAuth
+- More providers can be easily added
+
+See [src/lib/auth/README.md](src/lib/auth/README.md) for detailed setup.
+
+### Database Adapters
+
+The project supports multiple data sources through the Resource Adapter pattern:
+- **Drizzle + D1** (default)
+- **REST API**
+- **GraphQL**
+- **Custom implementations**
+
+See [docs/resource-adapters.md](docs/resource-adapters.md) for details.
+
+## 📚 Documentation
+
+- [Resource Adapters](docs/resource-adapters.md) - How to implement custom data sources
+- [Authentication Setup](src/lib/auth/README.md) - Configure OAuth providers
+- [Migration Guide](docs/migration-guide.md) - Upgrading from older versions
+
+## 🛠️ Development
 
 ### Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
+- `npm run check` - Run type checking
 - `npm run lint` - Run linter
 - `npm run format` - Format code
-- `npm run storybook` - Start Storybook
+- `npm run storybook` - Start Storybook for component development
+
+### Database Management
+
 - `npm run migration:generate` - Generate database migrations
 - `npm run migration:apply` - Apply migrations locally
+- `npm run migration:apply-prod` - Apply migrations to production
 
-## Deployment
+## 🚀 Deployment
 
-### Cloudflare Pages
+Easy RD is deployed on Cloudflare Pages with D1 database. The production site is available at [https://easyrd.dev](https://easyrd.dev).
 
-1. Build the project:
-   ```bash
-   npm run build
-   ```
+### Deploy Your Own Instance
 
-2. Deploy to Cloudflare Pages:
-   ```bash
-   wrangler pages deploy .svelte-kit/cloudflare
-   ```
+1. Fork this repository
+2. Create a Cloudflare account
+3. Set up a D1 database
+4. Configure environment variables in Cloudflare Pages
+5. Deploy with Wrangler or connect GitHub repository
 
-### Other Platforms
+See detailed deployment instructions in the [Cloudflare documentation](https://developers.cloudflare.com/pages/framework-guides/deploy-a-svelte-site/).
 
-The project can be deployed to any platform that supports SvelteKit. You may need to:
-1. Configure the appropriate adapter
-2. Set up environment variables
-3. Configure your database connection
+## 🤝 Contributing
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions! Whether it's bug fixes, new features, or documentation improvements.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -141,12 +225,32 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+### Development Guidelines
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- Write tests for new features
+- Follow the existing code style
+- Update documentation as needed
+- Add examples for new functionality
 
-## Acknowledgments
+## 📄 License
 
-- [DBML](https://www.dbml.org/) for the database markup language
-- [SvelteKit](https://kit.svelte.dev/) for the amazing framework
-- [Drizzle ORM](https://orm.drizzle.team/) for the type-safe database toolkit
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [DBML](https://www.dbml.org/) - For the excellent database markup language
+- [@meursyphus/flitter](https://github.com/meursyphus/flitter) - For the Flutter-inspired layout system
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - For the powerful code editor
+- [SvelteKit](https://kit.svelte.dev/) - For the amazing web framework
+- [Drizzle ORM](https://orm.drizzle.team/) - For the type-safe database toolkit
+- [Cloudflare](https://cloudflare.com/) - For the edge computing platform
+
+## 🔗 Links
+
+- **Live Demo**: [https://easyrd.dev](https://easyrd.dev)
+- **Discord Community**: [Join our Discord](https://discord.gg/n8dffUVbtp)
+- **Report Issues**: [GitHub Issues](https://github.com/yourusername/easy-rd/issues)
+
+---
+
+Made with ❤️ by the Easy RD community

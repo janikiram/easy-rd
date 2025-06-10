@@ -76,9 +76,9 @@
 				<a href="https://discord.gg/n8dffUVbtp" class="discord-button">Join Discord Community</a>
 				<span class="contact-divider">•</span>
 				<div class="secondary-links">
-					<a href="#">Documentation</a>
+					<a href="https://github.com/your-org/easy-rd" target="_blank" rel="noopener">GitHub</a>
 					<span class="contact-divider">•</span>
-					<a href="#">Examples</a>
+					<a href="https://github.com/your-org/easy-rd#examples" target="_blank" rel="noopener">Examples</a>
 				</div>
 			</div>
 		</section>
