@@ -89,7 +89,10 @@ export class DrizzleAdapter implements DatabaseAdapter {
 		return {
 			id: result.id,
 			name: result.name,
-			meta: result.meta,
+			meta: {
+				canView: result.meta.canView ?? true,
+				canEdit: result.meta.canEdit
+			},
 			createdAt: result.createdAt,
 			updatedAt: result.updatedAt
 		};
@@ -102,7 +105,19 @@ export class DrizzleAdapter implements DatabaseAdapter {
 			.where(eq(project.id, id))
 			.limit(1);
 
-		return result;
+		if (!result) return null;
+
+		return {
+			id: result.id,
+			name: result.name,
+			meta: {
+				canView: result.meta.canView ?? true,
+				canEdit: result.meta.canEdit
+			},
+			createdAt: result.createdAt,
+			updatedAt: result.updatedAt,
+			isDeleted: result.isDeleted
+		};
 	}
 
 	async updateProject(
@@ -191,7 +206,12 @@ export class DrizzleAdapter implements DatabaseAdapter {
 				name: m.meta.name,
 				image: m.meta.image
 			},
-			permission
+			permission: {
+				isOwner: permission.isOwner,
+				canView: permission.canView ?? true,
+				canEdit: permission.canEdit ?? false,
+				canInvite: permission.canInvite ?? false
+			}
 		}));
 	}
 
@@ -207,7 +227,16 @@ export class DrizzleAdapter implements DatabaseAdapter {
 			)
 			.limit(1);
 
-		return result;
+		if (!result) return null;
+
+		return {
+			permission: {
+				isOwner: result.permission.isOwner,
+				canView: result.permission.canView ?? true,
+				canEdit: result.permission.canEdit ?? false,
+				canInvite: result.permission.canInvite ?? false
+			}
+		};
 	}
 
 	async updateProjectMemberPermission(
@@ -261,11 +290,19 @@ export class DrizzleAdapter implements DatabaseAdapter {
 			project: {
 				id: p.id,
 				name: p.name,
-				meta: p.meta,
+				meta: {
+					canView: p.meta.canView ?? true,
+					canEdit: p.meta.canEdit
+				},
 				createdAt: p.createdAt,
 				updatedAt: p.updatedAt
 			},
-			permission
+			permission: {
+				isOwner: permission.isOwner,
+				canView: permission.canView ?? true,
+				canEdit: permission.canEdit ?? false,
+				canInvite: permission.canInvite ?? false
+			}
 		}));
 	}
 
@@ -293,7 +330,10 @@ export class DrizzleAdapter implements DatabaseAdapter {
 			project: {
 				id: projectResult[0].project.id,
 				name: projectResult[0].project.name,
-				meta: projectResult[0].project.meta,
+				meta: {
+					canView: projectResult[0].project.meta.canView ?? true,
+					canEdit: projectResult[0].project.meta.canEdit
+				},
 				createdAt: projectResult[0].project.createdAt,
 				updatedAt: projectResult[0].project.updatedAt
 			},

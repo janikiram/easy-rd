@@ -7,7 +7,7 @@ import { cozy } from '../../../routes/(app)/temp/dummy';
 const meta = {
 	title: 'Component/Editor',
 	component: Editor,
-	decorators: [() => StorybookEditorContainer],
+	decorators: [() => ({ Component: StorybookEditorContainer })],
 	parameters: { layout: 'fullscreen' },
 	tags: ['autodocs']
 } satisfies Meta<Editor>;
@@ -16,5 +16,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = { args: { code: cozy } };
-export const Empty: Story = { args: { code: '' } };
+export const Default: Story = { args: { code: cozy, class: 'editor-panel' } };
+export const Empty: Story = { args: { code: '', class: 'editor-panel' } };

@@ -22,7 +22,48 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const NoSession: Story = { args: { data: { session: null } } };
+export const NoSession: Story = { 
+	args: { 
+		data: { 
+			session: null,
+			user: undefined,
+			seo: {
+				title: 'easy-rd.dev',
+				description: 'Create, collaborate, and export your Entity-Relation.',
+				images: [
+					{
+						url: '/easy-rd.png',
+						width: 800,
+						height: 600,
+						alt: 'easy-rd.dev logo'
+					}
+				]
+			}
+		} 
+	} 
+};
 export const WithSession: Story = {
-	args: { data: { session: { user: {}, expires: Date.now() } as any } }
+	args: { 
+		data: { 
+			session: { user: {}, expires: Date.now() } as any,
+			user: {
+				id: '123',
+				name: 'Test User',
+				email: 'test@example.com',
+				image: 'https://example.com/avatar.jpg'
+			},
+			seo: {
+				title: 'easy-rd.dev',
+				description: 'Create, collaborate, and export your Entity-Relation.',
+				images: [
+					{
+						url: '/easy-rd.png',
+						width: 800,
+						height: 600,
+						alt: 'easy-rd.dev logo'
+					}
+				]
+			}
+		} 
+	}
 };

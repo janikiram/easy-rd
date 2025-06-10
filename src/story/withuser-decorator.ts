@@ -1,7 +1,7 @@
 import { initUserContext } from '$lib/store';
 import { me } from '$lib/fixture/member';
 
-function WidthUser(story: () => JSX.Element) {
+function WidthUser(story: () => any) {
 	initUserContext(me);
 
 	return story();
