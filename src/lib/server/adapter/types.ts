@@ -33,17 +33,31 @@ export interface ResourceAdapter {
 
 	// Project Management
 	/**
-	 * Create a new project
+	 * Create a new project with owner information
 	 */
 	createProject(data: {
 		name: string;
 		publicAccess: { view: boolean; edit?: boolean };
-	}): Promise<ProjectSimple>;
+		ownerId: string;
+	}): Promise<{
+		id: string;
+		name: string;
+		meta: { canView: boolean; canEdit?: boolean };
+		createdAt: Date;
+		updatedAt: Date;
+	}>;
 	
 	/**
 	 * Get project basic information
 	 */
-	getProject(projectId: string): Promise<ProjectSimple | null>;
+	getProject(projectId: string): Promise<{
+		id: string;
+		name: string;
+		meta: { canView: boolean; canEdit?: boolean };
+		createdAt: Date;
+		updatedAt: Date;
+		isDeleted: boolean;
+	} | null>;
 	
 	/**
 	 * Get detailed project information including code and collaborators
@@ -67,8 +81,19 @@ export interface ResourceAdapter {
 	 * List projects accessible by a user
 	 */
 	listUserProjects(userId: string): Promise<Array<{
-		project: ProjectSimple;
-		role: 'owner' | 'collaborator' | 'viewer';
+		project: {
+			id: string;
+			name: string;
+			meta: { canView: boolean; canEdit?: boolean };
+			createdAt: Date;
+			updatedAt: Date;
+		};
+		permission: {
+			isOwner?: boolean;
+			canView: boolean;
+			canEdit: boolean;
+			canInvite: boolean;
+		};
 	}>>;
 
 	// Project Content Management

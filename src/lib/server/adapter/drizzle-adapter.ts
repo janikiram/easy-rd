@@ -64,11 +64,21 @@ export class DrizzleAdapter implements ResourceAdapter {
 	async createProject(data: {
 		name: string;
 		publicAccess: { view: boolean; edit?: boolean };
-	}): Promise<ProjectSimple> {
+		ownerId: string;
+	}): Promise<{
+		id: string;
+		name: string;
+		meta: { canView: boolean; canEdit?: boolean };
+		createdAt: Date;
+		updatedAt: Date;
+	}> {
+		const projectId = crypto.randomUUID();
+		
+		// Create project
 		const [result] = await this.db
 			.insert(project)
 			.values({
-				id: crypto.randomUUID(),
+				id: projectId,
 				name: data.name,
 				meta: {
 					canView: data.publicAccess.view,
@@ -77,48 +87,58 @@ export class DrizzleAdapter implements ResourceAdapter {
 				isDeleted: false
 			})
 			.returning();
+			
+		// Add owner as a project member
+		await this.db.insert(projectMember).values({
+			id: crypto.randomUUID(),
+			projectId: projectId,
+			memberId: data.ownerId,
+			permission: {
+				isOwner: true,
+				canView: true,
+				canEdit: true,
+				canInvite: true
+			}
+		});
 
 		return {
 			id: result.id,
 			name: result.name,
-			publicPermission: data.publicAccess.edit ? 'edit' : data.publicAccess.view ? 'view' : 'none',
-			permission: {
-				canView: true,
-				canEdit: true,
-				canInvite: true
+			meta: {
+				canView: result.meta.canView ?? true,
+				canEdit: result.meta.canEdit
 			},
-			isOwner: true,
 			createdAt: result.createdAt,
 			updatedAt: result.updatedAt
 		};
 	}
 
-	async getProject(projectId: string): Promise<ProjectSimple | null> {
+	async getProject(projectId: string): Promise<{
+		id: string;
+		name: string;
+		meta: { canView: boolean; canEdit?: boolean };
+		createdAt: Date;
+		updatedAt: Date;
+		isDeleted: boolean;
+	} | null> {
 		const [result] = await this.db
 			.select()
 			.from(project)
-			.where(and(
-				eq(project.id, projectId),
-				eq(project.isDeleted, false)
-			))
+			.where(eq(project.id, projectId))
 			.limit(1);
 
 		if (!result) return null;
 
-		// For basic project info, we'll need to check permissions separately
-		// This is a simplified version - in real implementation, you'd join with projectMember
 		return {
 			id: result.id,
 			name: result.name,
-			publicPermission: result.meta.canEdit ? 'edit' : result.meta.canView ? 'view' : 'none',
-			permission: {
+			meta: {
 				canView: result.meta.canView ?? true,
-				canEdit: result.meta.canEdit ?? false,
-				canInvite: false
+				canEdit: result.meta.canEdit
 			},
-			isOwner: false,
 			createdAt: result.createdAt,
-			updatedAt: result.updatedAt
+			updatedAt: result.updatedAt,
+			isDeleted: result.isDeleted
 		};
 	}
 
@@ -142,10 +162,13 @@ export class DrizzleAdapter implements ResourceAdapter {
 
 		const { project: p, resource: r } = projectResult[0];
 
+		// Determine publicPermission based on meta
+		const publicPermission: Permission = p.meta.canEdit ? 'invite' : p.meta.canView ? 'view' : 'view';
+
 		return {
 			id: p.id,
 			name: p.name,
-			publicPermission: p.meta.canEdit ? 'edit' : p.meta.canView ? 'view' : 'none',
+			publicPermission,
 			permission: {
 				canView: p.meta.canView ?? true,
 				canEdit: p.meta.canEdit ?? false,
@@ -154,7 +177,7 @@ export class DrizzleAdapter implements ResourceAdapter {
 			isOwner: false,
 			createdAt: p.createdAt,
 			updatedAt: p.updatedAt,
-			url: '', // This should be constructed based on your URL scheme
+			url: `/workspace/${p.id}`, // Construct URL based on project ID
 			resource: {
 				code: r?.code || ''
 			},
@@ -195,8 +218,19 @@ export class DrizzleAdapter implements ResourceAdapter {
 	}
 
 	async listUserProjects(userId: string): Promise<Array<{
-		project: ProjectSimple;
-		role: 'owner' | 'collaborator' | 'viewer';
+		project: {
+			id: string;
+			name: string;
+			meta: { canView: boolean; canEdit?: boolean };
+			createdAt: Date;
+			updatedAt: Date;
+		};
+		permission: {
+			isOwner?: boolean;
+			canView: boolean;
+			canEdit: boolean;
+			canInvite: boolean;
+		};
 	}>> {
 		const results = await this.db
 			.select({
@@ -216,21 +250,24 @@ export class DrizzleAdapter implements ResourceAdapter {
 				permission.isOwner ? 'owner' :
 				permission.canEdit ? 'collaborator' : 'viewer';
 
+			// For listUserProjects, we need to return the data in the format expected by interface
 			return {
 				project: {
 					id: p.id,
 					name: p.name,
-					publicPermission: p.meta.canEdit ? 'edit' : p.meta.canView ? 'view' : 'none',
-					permission: {
-						canView: permission.canView ?? true,
-						canEdit: permission.canEdit ?? false,
-						canInvite: permission.canInvite ?? false
+					meta: {
+						canView: p.meta.canView ?? true,
+						canEdit: p.meta.canEdit
 					},
-					isOwner: permission.isOwner ?? false,
 					createdAt: p.createdAt,
 					updatedAt: p.updatedAt
 				},
-				role
+				permission: {
+					isOwner: permission.isOwner,
+					canView: permission.canView ?? true,
+					canEdit: permission.canEdit ?? false,
+					canInvite: permission.canInvite ?? false
+				}
 			};
 		});
 	}
@@ -341,16 +378,21 @@ export class DrizzleAdapter implements ResourceAdapter {
 			.innerJoin(member, eq(member.id, projectMember.memberId))
 			.where(eq(projectMember.projectId, projectId));
 
-		return results.map(({ member: m, permission }) => ({
-			id: m.id,
-			email: m.email,
-			name: m.meta.name,
-			image: m.meta.image,
-			permission: {
-				canEdit: permission.canEdit ?? false,
-				canInvite: permission.canInvite ?? false
-			}
-		}));
+		return results.map(({ member: m, permission }) => {
+			// Convert permission object to Permission type string
+			const permissionLevel: Permission = 
+				permission.canInvite ? 'invite' :
+				permission.canEdit ? 'edit' : 'view';
+			
+			return {
+				id: m.id,
+				email: m.email,
+				name: m.meta.name,
+				image: m.meta.image,
+				permission: permissionLevel,
+				isOwner: permission.isOwner
+			};
+		});
 	}
 
 	async getUserPermissions(projectId: string, userId: string): Promise<Permission | null> {
@@ -365,10 +407,11 @@ export class DrizzleAdapter implements ResourceAdapter {
 
 		if (!result) return null;
 
-		return {
-			canView: result.permission.canView ?? true,
-			canEdit: result.permission.canEdit ?? false,
-			canInvite: result.permission.canInvite ?? false
-		};
+		// Convert permission object to Permission type string
+		const permissionLevel: Permission = 
+			result.permission.canInvite ? 'invite' :
+			result.permission.canEdit ? 'edit' : 'view';
+			
+		return permissionLevel;
 	}
 }
