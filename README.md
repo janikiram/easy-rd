@@ -31,6 +31,7 @@ Easy RD is an open-source, web-based database schema designer that makes creatin
 - **Library**: [@meursyphus/flitter](https://github.com/meursyphus/flitter) & @meursyphus/flitter-svelte
 - **Purpose**: Provides a Flutter-like widget system for building complex UI layouts
 - **Usage**: Powers the interactive database diagram visualization with draggable tables and connections
+- **Organization**: Both Easy RD and Flitter are part of the [Meursyphus](https://github.com/meursyphus) organization, sharing the same vision for modern web development tools
 
 #### 📝 Database Schema Language - DBML
 - **Library**: [@dbml/core](https://www.dbml.org/)
@@ -78,7 +79,7 @@ Easy RD is an open-source, web-based database schema designer that makes creatin
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/easy-rd.git
+   git clone https://github.com/meursyphus/easy-rd.git
    cd easy-rd
    ```
 
@@ -247,9 +248,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Links
 
-- **Live Demo**: [https://easyrd.dev](https://easyrd.dev)
+- **Live Service**: [https://easyrd.dev](https://easyrd.dev)
+- **Source Code**: [GitHub Repository](https://github.com/meursyphus/easy-rd)
 - **Discord Community**: [Join our Discord](https://discord.gg/n8dffUVbtp)
-- **Report Issues**: [GitHub Issues](https://github.com/yourusername/easy-rd/issues)
+- **Report Issues**: [GitHub Issues](https://github.com/meursyphus/easy-rd/issues)
+- **Organization**: [Meursyphus on GitHub](https://github.com/meursyphus) - Home to Easy RD, Flitter, and other modern web tools
 
 ---
 

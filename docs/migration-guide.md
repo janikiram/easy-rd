@@ -1,21 +1,33 @@
-# Database Migration Guide
+# Migration Guide
 
-This guide explains how to migrate from Drizzle ORM to another database solution, or how to set up a new database from scratch.
+This guide explains how to migrate from the default Drizzle ORM setup to another data source, or how to set up Easy RD with a different backend from scratch.
 
 ## Overview
 
-Easy RD uses a database adapter pattern that allows you to switch between different database implementations without changing the application code. The default implementation uses Drizzle ORM with Cloudflare D1, but you can easily switch to any other database.
+Easy RD uses a **Resource Adapter pattern** that allows you to connect to any data source without changing the application code. The default implementation uses Drizzle ORM with Cloudflare D1, but you can easily switch to REST APIs, GraphQL endpoints, other databases, or any combination thereof.
 
 ## Migration Steps
 
-### 1. Choose Your Database Solution
+### 1. Choose Your Data Source
 
-First, decide which database solution you want to use:
+First, decide what type of data source you want to use:
+
+**Databases:**
 - **PostgreSQL**: Great for production deployments
 - **MySQL**: Popular choice with good tooling
 - **SQLite**: Perfect for development and small deployments
 - **MongoDB**: If you prefer NoSQL
 - **Supabase/Neon**: Serverless PostgreSQL options
+
+**APIs:**
+- **REST API**: If you have an existing backend service
+- **GraphQL**: For flexible data fetching
+- **Serverless Functions**: Firebase, Supabase, AWS Lambda
+- **Headless CMS**: Strapi, Directus, Sanity
+
+**Hybrid Approaches:**
+- **User Management API + Project Database**: Use Auth0/Clerk for users, database for projects
+- **Multi-tenant**: Different adapters per tenant
 
 ### 2. Export Existing Data (If Migrating)
 
@@ -29,20 +41,20 @@ wrangler d1 export easy-rd --output=backup.sql
 npm run drizzle-kit studio
 ```
 
-### 3. Implement the Database Adapter
+### 3. Implement the Resource Adapter
 
-Create your adapter implementation following the `DatabaseAdapter` interface:
+Create your adapter implementation following the `ResourceAdapter` interface:
 
 ```typescript
-// src/lib/server/database/your-adapter.ts
-import type { DatabaseAdapter } from './types';
+// src/lib/server/adapter/your-adapter.ts
+import type { ResourceAdapter } from './types';
 
-export class YourAdapter implements DatabaseAdapter {
+export class YourAdapter implements ResourceAdapter {
   // Implement all required methods
 }
 ```
 
-See [database-adapters.md](./database-adapters.md) for detailed examples.
+See [resource-adapters.md](./resource-adapters.md) for detailed examples and implementation patterns.
 
 ### 4. Update Database Schema
 
@@ -178,26 +190,35 @@ async function migrate() {
    MONGODB_URI=mongodb://localhost:27017/easy-rd
    ```
 
-2. Update the database handler:
+2. Update the adapter handler:
    ```typescript
-   // src/lib/server/database/index.ts
+   // src/lib/server/adapter/index.ts
    import { YourAdapter } from './your-adapter';
    
-   export function createDatabaseHandler(): Handle {
-     // Your implementation
+   export function createAdapterHandler(customAdapter?: ResourceAdapter): Handle {
+     return function ({ event, resolve }) {
+       if (building) return resolve(event);
+       
+       event.locals.db = customAdapter || new YourAdapter({
+         // your configuration
+       });
+       
+       return resolve(event);
+     };
    }
    ```
 
-3. Update the app.d.ts types:
+3. Update hooks.server.ts:
    ```typescript
-   declare global {
-     namespace App {
-       interface Locals {
-         dbAdapter: DatabaseAdapter;
-         // Remove the old 'db' property
-       }
-     }
-   }
+   // src/hooks.server.ts
+   import { createAdapterHandler } from '$lib/server/adapter';
+   import { YourAdapter } from '$lib/server/adapter/your-adapter';
+   
+   const adapter = new YourAdapter({
+     // your configuration
+   });
+   
+   const adapterHandler = createAdapterHandler(adapter);
    ```
 
 ### 7. Test the Migration
@@ -274,14 +295,14 @@ Always have a rollback plan:
 
 ```typescript
 // Example: Feature flag for gradual rollout
-export function createDatabaseHandler(): Handle {
+export function createAdapterHandler(): Handle {
   return function ({ event, resolve }) {
-    const useNewDb = event.url.searchParams.has('new_db');
+    const useNewAdapter = event.url.searchParams.has('new_adapter');
     
-    if (useNewDb) {
-      event.locals.dbAdapter = new NewAdapter();
+    if (useNewAdapter) {
+      event.locals.db = new NewAdapter();
     } else {
-      event.locals.dbAdapter = new DrizzleAdapter(db);
+      event.locals.db = new DrizzleAdapter(db);
     }
     
     return resolve(event);
@@ -300,17 +321,21 @@ export function createDatabaseHandler(): Handle {
 
 After successful migration:
 
-1. Remove old database dependencies:
+1. Remove old dependencies (if no longer needed):
    ```bash
    npm uninstall drizzle-orm drizzle-kit
    ```
 
-2. Clean up old migration files:
+2. Clean up old files (if using API instead of database):
    ```bash
    rm -rf migrations/
    rm drizzle.config.ts
+   rm -rf src/lib/server/entity
+   rm -rf src/lib/server/drizzle
    ```
 
-3. Update documentation to reflect the new database setup
+3. Update documentation to reflect the new data source setup
 
-4. Update CI/CD pipelines with new database configuration
+4. Update CI/CD pipelines with new configuration
+
+5. Consider keeping the Drizzle adapter as a reference implementation

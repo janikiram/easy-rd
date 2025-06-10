@@ -18,6 +18,14 @@
 				>
 					Discord
 				</a>
+				<a
+					href="https://github.com/meursyphus/easy-rd"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="m-[0_0_5px_0] inline-block break-words font-normal text-xs md:text-sm text-[#B5B5B5]"
+				>
+					GitHub
+				</a>
 			</div>
 		</div>
 		<div class="m-[0_0_26px_0] flex flex-col box-sizing-border">
