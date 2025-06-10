@@ -10,10 +10,10 @@ const adapterHandler = createAdapterHandler();
 
 const service: Handle = async ({ event, resolve }) => {
 	const {
-		locals: { db, getSession }
+		locals: { dbAdapter, getSession }
 	} = event;
 
-	event.locals.service = new Service({ db, getSession, origin: event.url.origin });
+	event.locals.service = new Service({ dbAdapter, getSession, origin: event.url.origin });
 	return resolve(event);
 };
 

@@ -2,7 +2,6 @@ import type { ResourceAdapter } from './types';
 import { DrizzleAdapter } from './drizzle-adapter';
 import type { Handle } from '@sveltejs/kit';
 import { building } from '$app/environment';
-import { drizzle as generateDrizzle } from 'drizzle-orm/d1';
 
 export type { ResourceAdapter, AdapterConfig } from './types';
 export { DrizzleAdapter } from './drizzle-adapter';
@@ -11,7 +10,7 @@ export { DrizzleAdapter } from './drizzle-adapter';
  * Create resource adapter middleware for SvelteKit.
  * This middleware initializes the resource adapter and makes it available in locals.
  * 
- * By default, it uses Drizzle ORM with Cloudflare D1.
+ * By default, it creates a DrizzleAdapter that handles D1 connection internally.
  * You can replace this with your own adapter implementation.
  */
 export function createAdapterHandler(adapter?: ResourceAdapter): Handle {
@@ -24,18 +23,8 @@ export function createAdapterHandler(adapter?: ResourceAdapter): Handle {
 			event.locals.dbAdapter = adapter;
 		} else {
 			// Default implementation using Drizzle with Cloudflare D1
-			const { platform } = event;
-			if (platform === undefined) {
-				console.error('platform is undefined');
-				throw new Error('platform is undefined');
-			}
-			
-			const db = generateDrizzle(platform.env.DB);
-			event.locals.dbAdapter = new DrizzleAdapter(db);
-			
-			// Keep the original db for backward compatibility
-			// This can be removed once all code is migrated to use adapter
-			event.locals.db = db;
+			// DrizzleAdapter will handle DB connection internally
+			event.locals.dbAdapter = DrizzleAdapter.fromPlatform(event.platform);
 		}
 		
 		return resolve(event);

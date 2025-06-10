@@ -2,7 +2,7 @@
 
 Easy RD is an open-source, web-based database schema designer that makes creating and sharing Entity-Relationship Diagrams effortless. Built with modern web technologies, it provides a seamless experience for database design and collaboration.
 
-🚀 **Live Demo**: [https://easyrd.dev](https://easyrd.dev)
+🚀 **Live Service**: [https://easyrd.dev](https://easyrd.dev)
 
 ![Easy RD Preview](static/easy-rd.png)
 
@@ -100,10 +100,13 @@ Easy RD is an open-source, web-based database schema designer that makes creatin
 
 4. Set up the database:
    ```bash
-   # Generate migrations
+   # First, check current migration status
+   npm run migration:list
+   
+   # Generate new migrations if schema changes
    npm run migration:generate
    
-   # Apply migrations
+   # Apply migrations to local D1 database
    npm run migration:apply
    ```
 
@@ -198,9 +201,34 @@ See [docs/resource-adapters.md](docs/resource-adapters.md) for details.
 
 ### Database Management
 
-- `npm run migration:generate` - Generate database migrations
-- `npm run migration:apply` - Apply migrations locally
-- `npm run migration:apply-prod` - Apply migrations to production
+#### Migration Commands
+
+- `npm run migration:generate` - Generate new database migrations from schema changes
+- `npm run migration:list` - List current migration status (local D1 database)
+- `npm run migration:list-prod` - List current migration status (production D1 database)
+- `npm run migration:apply` - Apply pending migrations to local D1 database
+- `npm run migration:apply-prod` - Apply pending migrations to production D1 database
+
+#### Migration Workflow
+
+1. **Check Status**: Always start by checking what migrations exist
+   ```bash
+   npm run migration:list
+   ```
+
+2. **For Schema Changes**: When you modify `src/lib/server/entity/index.ts`
+   ```bash
+   npm run migration:generate
+   npm run migration:apply
+   ```
+
+3. **For Production**: Deploy migrations to production
+   ```bash
+   npm run migration:list-prod  # Check production status
+   npm run migration:apply-prod # Apply to production
+   ```
+
+**Note**: Local development uses Cloudflare D1 in local mode, while production uses the remote D1 database specified in `wrangler.toml`.
 
 ## 🚀 Deployment
 

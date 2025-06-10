@@ -13,11 +13,8 @@ import type {
 	SharedMember,
 	CreateMemberPermission
 } from '$lib/types';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
-import { member, project, projectMember, resource } from '../entity';
-import { and, desc, eq } from 'drizzle-orm';
+import type { ResourceAdapter } from '../adapter';
 import { fail } from '@sveltejs/kit';
-import type { ProjectModel } from '$lib/dbml';
 import type { DefaultSession } from '@auth/core/types';
 import { assertUnreachable } from '$lib/utils';
 import * as MemberDefaultProfile from '$lib/fixture/member/profile-image';
@@ -39,20 +36,20 @@ export interface IService {
 }
 
 export class Service implements IService {
-	#db: DrizzleD1Database<Record<string, unknown>>;
+	#dbAdapter: ResourceAdapter;
 	#getSession: () => Promise<Session | null>;
 	#origin: string;
 	#notificationService: NotificationService;
 	constructor({
-		db,
+		dbAdapter,
 		getSession,
 		origin
 	}: {
-		db: DrizzleD1Database<Record<string, unknown>>;
+		dbAdapter: ResourceAdapter;
 		getSession: () => Promise<Session | null>;
 		origin: string;
 	}) {
-		this.#db = db;
+		this.#dbAdapter = dbAdapter;
 		this.#getSession = getSession;
 		this.#origin = origin;
 		this.#notificationService = createNotificationService();
@@ -63,31 +60,20 @@ export class Service implements IService {
 		if (session == null) {
 			throw fail(401, { message: 'Can not create member. reason: Unauthorized' });
 		}
-		const found = await this.#findMember(session.user.id);
+		
+		const found = await this.#dbAdapter.getUser({ id: session.user.id });
 		if (found != null) return found;
 
-		const [result] = await this.#db
-			.insert(member)
-			.values({
-				id: session.user.id,
-				email: session.user.email ?? '',
-				meta: {
-					name: session.user.name ?? '',
-					image: session.user.image ?? MemberDefaultProfile.image1
-				}
-			})
-			.returning();
+		const newUser = await this.#dbAdapter.registerUser({
+			id: session.user.id,
+			email: session.user.email ?? '',
+			name: session.user.name ?? '',
+			image: session.user.image ?? MemberDefaultProfile.image1
+		});
 
-		const response = {
-			id: result.id,
-			email: result.email,
-			name: result.meta.name,
-			image: result.meta.image
-		};
+		await this.#notificationService.sendOnCreatedUser(newUser);
 
-		await this.#notificationService.sendOnCreatedUser(response);
-
-		return response;
+		return newUser;
 	}
 
 	async findAllProjectsOfMember() {

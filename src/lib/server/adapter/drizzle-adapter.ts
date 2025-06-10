@@ -1,5 +1,6 @@
 import type { ResourceAdapter } from './types';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import { drizzle as generateDrizzle } from 'drizzle-orm/d1';
 import { member, project, projectMember, resource } from '../entity';
 import { and, eq, desc } from 'drizzle-orm';
 import type { Member, ProjectSimple, ProjectDetail, Permission, SharedMember } from '$lib/types';
@@ -11,6 +12,19 @@ import type { ProjectModel } from '$lib/dbml';
  */
 export class DrizzleAdapter implements ResourceAdapter {
 	constructor(private db: DrizzleD1Database<Record<string, unknown>>) {}
+
+	/**
+	 * Create a DrizzleAdapter from Cloudflare platform context
+	 */
+	static fromPlatform(platform: App.Platform | undefined): DrizzleAdapter {
+		if (platform === undefined) {
+			console.error('platform is undefined');
+			throw new Error('platform is undefined');
+		}
+		
+		const db = generateDrizzle(platform.env.DB);
+		return new DrizzleAdapter(db);
+	}
 
 	// User Management
 	async registerUser(user: {
