@@ -1,6 +1,8 @@
 # Database Adapters (Deprecated)
 
-> **Note**: This documentation is deprecated. Database Adapters have been replaced with the more flexible Resource Adapter pattern. Please see [Resource Adapters](./resource-adapters.md) for the latest documentation.
+> **⚠️ DEPRECATED**: This documentation is deprecated. Database Adapters have been replaced with the more flexible Resource Adapter pattern. Please see [Resource Adapters](./resource-adapters.md) for the latest documentation.
+>
+> The database folder (`src/lib/server/database`) has been removed in favor of the new adapter pattern (`src/lib/server/adapter`).
 
 ## Migration Notice
 
