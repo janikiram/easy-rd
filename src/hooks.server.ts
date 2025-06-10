@@ -1,12 +1,12 @@
 import type { Handle } from '@sveltejs/kit';
 import { handle as auth } from '$lib/auth';
 import { sequence } from '@sveltejs/kit/hooks';
-import { drizzle } from '$lib/server/drizzle';
+import { createDatabaseHandler } from '$lib/server/database';
 import { Service } from '$lib/server/service';
 import { init } from '@jill64/sentry-sveltekit-cloudflare/server';
 import { PUBLIC_SENTRY_DSN } from '$env/static/public';
 
-const drizzleHandler = drizzle();
+const databaseHandler = createDatabaseHandler();
 
 const service: Handle = async ({ event, resolve }) => {
 	const {
@@ -19,7 +19,7 @@ const service: Handle = async ({ event, resolve }) => {
 
 const { onHandle, onError } = init(PUBLIC_SENTRY_DSN, { enableInDevMode: false });
 
-export const handle = onHandle(sequence(auth, drizzleHandler, service));
+export const handle = onHandle(sequence(auth, databaseHandler, service));
 
 export const handleError = onError((_e, _sentryEventId) => {
 	console.error(_e);

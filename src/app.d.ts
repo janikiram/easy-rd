@@ -11,7 +11,8 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			db: ReturnType<(typeof import('drizzle-orm/d1'))['drizzle']>;
+			db: ReturnType<(typeof import('drizzle-orm/d1'))['drizzle']>; // Deprecated: Use dbAdapter instead
+			dbAdapter: import('$lib/server/database').DatabaseAdapter;
 			service: import('$lib/server/service').Service;
 		}
 		// interface PageData {}

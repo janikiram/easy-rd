@@ -1,6 +1,6 @@
 # Database Configuration
 
-This project uses [Drizzle ORM](https://orm.drizzle.team/) with Cloudflare D1 database. However, the architecture is designed to be database-agnostic, allowing you to use any database supported by Drizzle ORM.
+This project uses a database adapter pattern that allows you to use any database or ORM of your choice. By default, it uses [Drizzle ORM](https://orm.drizzle.team/) with Cloudflare D1 database, but you can easily switch to PostgreSQL, MySQL, MongoDB, or any other database by implementing the `DatabaseAdapter` interface.
 
 ## Current Setup (Cloudflare D1)
 
@@ -37,69 +37,40 @@ The project is configured to use Cloudflare D1 by default:
 
 ## Using Alternative Databases
 
-To use a different database (PostgreSQL, MySQL, SQLite, etc.):
+The project now uses a database adapter pattern, making it easy to switch between different databases or ORMs. See the following resources:
 
-### 1. Update Dependencies
+- **[Database Adapter Examples](../../docs/database-adapters.md)**: Detailed examples for Prisma, TypeORM, MongoDB, and more
+- **[Migration Guide](../../docs/migration-guide.md)**: Step-by-step guide for migrating from Drizzle to another database
 
-```bash
-# For PostgreSQL
-npm install @neondatabase/serverless
-npm install drizzle-orm/neon-http
+### Quick Start with Different Databases
 
-# For MySQL
-npm install mysql2
-npm install drizzle-orm/mysql2
-
-# For SQLite
-npm install better-sqlite3
-npm install drizzle-orm/better-sqlite3
-```
-
-### 2. Modify Database Connection
-
-Update `src/lib/server/drizzle/index.ts`:
-
+#### PostgreSQL with Drizzle
 ```typescript
-// Example for PostgreSQL
+// src/lib/server/database/index.ts
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
+import { DrizzleAdapter } from './drizzle-adapter';
 
-export function drizzle(): Handle {
+export function createDatabaseHandler(): Handle {
   return function ({ event, resolve }) {
     if (building) return resolve(event);
     
     const sql = neon(process.env.DATABASE_URL!);
-    event.locals.db = drizzle(sql);
+    const db = drizzle(sql);
+    event.locals.dbAdapter = new DrizzleAdapter(db);
+    
     return resolve(event);
   };
 }
 ```
 
-### 3. Update Drizzle Config
+#### Using a Different ORM
+1. Implement the `DatabaseAdapter` interface
+2. Update the `createDatabaseHandler` function
+3. Update your schema and migrations
+4. You're done!
 
-Modify `drizzle.config.ts` for your database:
-
-```typescript
-// Example for PostgreSQL
-export default {
-  schema: "./src/lib/server/entity/index.ts",
-  out: "./migrations",
-  driver: 'pg',
-  dbCredentials: {
-    connectionString: process.env.DATABASE_URL!,
-  }
-} satisfies Config;
-```
-
-### 4. Regenerate Migrations
-
-```bash
-# Generate new migrations for your database
-npm run migration:generate
-
-# Apply migrations
-npm run migration:apply
-```
+The adapter pattern ensures your application code remains unchanged regardless of the database you choose.
 
 ## Schema Overview
 
