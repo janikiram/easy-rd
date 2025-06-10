@@ -1,0 +1,27 @@
+{
+  "version": "5",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1703914616799,
+      "tag": "0000_striped_xorn",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1704640241716,
+      "tag": "0001_easy_marvex",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1713201429331,
+      "tag": "0002_misty_mentor",
+      "breakpoints": true
+    }
+  ]
+}

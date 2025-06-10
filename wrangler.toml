@@ -1,0 +1,7 @@
+compatibility_date = "2023-05-18"
+node_compat = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "easy-rd.web"
+database_id = "5790f042-a91c-4d6d-8865-31bb34bd804f"

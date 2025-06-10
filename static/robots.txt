@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://easyrd.web/sitemap.xml
+
