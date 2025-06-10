@@ -21,7 +21,7 @@ import type { ProjectModel } from '$lib/dbml';
 import type { DefaultSession } from '@auth/core/types';
 import { assertUnreachable } from '$lib/utils';
 import * as MemberDefaultProfile from '$lib/fixture/member/profile-image';
-import NotificationService from './notification-service';
+import { createNotificationService, type NotificationService } from './notification-service';
 
 type Session = {
 	user: {
@@ -55,7 +55,7 @@ export class Service implements IService {
 		this.#db = db;
 		this.#getSession = getSession;
 		this.#origin = origin;
-		this.#notificationService = new NotificationService();
+		this.#notificationService = createNotificationService();
 	}
 
 	async createMember(): Promise<Member> {
