@@ -3,6 +3,7 @@ import { DrizzleAdapter } from './drizzle-adapter';
 import type { Handle } from '@sveltejs/kit';
 import { building } from '$app/environment';
 import { drizzle as generateDrizzle } from 'drizzle-orm/d1';
+import { DrizzleAdapter as NewDrizzleAdapter } from '../adapter/drizzle-adapter';
 
 export type { DatabaseAdapter } from './types';
 export { DrizzleAdapter } from './drizzle-adapter';
@@ -27,7 +28,8 @@ export function createDatabaseHandler(): Handle {
 		}
 		
 		const db = generateDrizzle(platform.env.DB);
-		event.locals.dbAdapter = new DrizzleAdapter(db);
+		// Use the new adapter implementation
+		event.locals.dbAdapter = new NewDrizzleAdapter(db);
 		
 		// Keep the original db for backward compatibility
 		// This can be removed once all code is migrated to use dbAdapter

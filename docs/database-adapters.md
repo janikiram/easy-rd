@@ -1,4 +1,38 @@
-# Database Adapter Examples
+# Database Adapters (Deprecated)
+
+> **Note**: This documentation is deprecated. Database Adapters have been replaced with the more flexible Resource Adapter pattern. Please see [Resource Adapters](./resource-adapters.md) for the latest documentation.
+
+## Migration Notice
+
+The Database Adapter interface has been renamed and redesigned as Resource Adapter to support not just databases, but any data source including REST APIs, GraphQL, and more.
+
+### Quick Migration Guide
+
+1. **Update imports**:
+   ```typescript
+   // Old
+   import type { DatabaseAdapter } from '$lib/server/database';
+   
+   // New
+   import type { ResourceAdapter } from '$lib/server/adapter';
+   ```
+
+2. **Update method names**:
+   - `findMemberById` → `getUser`
+   - `findMemberByEmail` → `getUser`
+   - `createProjectMember` → `addCollaborator`
+   - `deleteProjectMember` → `removeCollaborator`
+   - `findProjectsByMemberId` → `listUserProjects`
+
+3. **Update return types**:
+   - Remove database-specific fields like `isDeleted`
+   - Use domain models instead of database schemas
+
+For complete migration instructions and new adapter examples, please refer to the [Resource Adapters documentation](./resource-adapters.md).
+
+---
+
+# Original Database Adapter Examples (Deprecated)
 
 This document provides examples of how to implement the DatabaseAdapter interface with different ORMs and databases.
 

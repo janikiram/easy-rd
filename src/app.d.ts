@@ -12,7 +12,7 @@ declare global {
 		// interface Error {}
 		interface Locals {
 			db: ReturnType<(typeof import('drizzle-orm/d1'))['drizzle']>; // Deprecated: Use dbAdapter instead
-			dbAdapter: import('$lib/server/database').DatabaseAdapter;
+			dbAdapter: import('$lib/server/adapter').ResourceAdapter;
 			service: import('$lib/server/service').Service;
 		}
 		// interface PageData {}
