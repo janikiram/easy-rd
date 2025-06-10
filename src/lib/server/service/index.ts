@@ -1,487 +1,394 @@
 import type {
-	Member,
-	ProjectCreate,
-	ProjectDetail,
-	ProjectSimple,
-	ProjectUpdate,
-	Resource,
-	UpdateMemberPermission,
-	UpdatePublicPermission,
-	UpdatePermission,
-	Permission,
-	DeletePermission,
-	SharedMember,
-	CreateMemberPermission
-} from '$lib/types';
-import type { ResourceAdapter } from '../adapter';
-import { fail } from '@sveltejs/kit';
-import type { DefaultSession } from '@auth/core/types';
-import { assertUnreachable } from '$lib/utils';
-import * as MemberDefaultProfile from '$lib/fixture/member/profile-image';
-import { createNotificationService, type NotificationService } from './notification-service';
+  Member,
+  ProjectCreate,
+  ProjectDetail,
+  ProjectSimple,
+  ProjectUpdate,
+  Resource,
+  UpdateMemberPermission,
+  UpdatePublicPermission,
+  UpdatePermission,
+  Permission,
+  DeletePermission,
+  SharedMember,
+  CreateMemberPermission,
+} from "$lib/types";
+import type { ResourceAdapter } from "../adapter";
+import { fail } from "@sveltejs/kit";
+import type { DefaultSession } from "@auth/core/types";
+import { assertUnreachable } from "$lib/utils";
+import * as MemberDefaultProfile from "$lib/fixture/member/profile-image";
+import {
+  createNotificationService,
+  type NotificationService,
+} from "./notification-service";
 
 type Session = {
-	user: {
-		id: string;
-	} & DefaultSession['user'];
+  user: {
+    id: string;
+  } & DefaultSession["user"];
 };
 
 export interface IService {
-	createMember: () => Promise<Member>;
-	findAllProjectsOfMember: () => Promise<ProjectSimple[]>;
-	findProject: (id: string) => Promise<ProjectDetail>;
-	deleteProject: (id: string) => Promise<void>;
-	createProject: (props: ProjectCreate) => Promise<ProjectDetail>;
-	updateProject: (id: string, props: ProjectUpdate) => Promise<void>;
+  createMember: () => Promise<Member>;
+  findAllProjectsOfMember: () => Promise<ProjectSimple[]>;
+  findProject: (id: string) => Promise<ProjectDetail>;
+  deleteProject: (id: string) => Promise<void>;
+  createProject: (props: ProjectCreate) => Promise<ProjectDetail>;
+  updateProject: (id: string, props: ProjectUpdate) => Promise<void>;
 }
 
 export class Service implements IService {
-	#dbAdapter: ResourceAdapter;
-	#getSession: () => Promise<Session | null>;
-	#origin: string;
-	#notificationService: NotificationService;
-	constructor({
-		dbAdapter,
-		getSession,
-		origin
-	}: {
-		dbAdapter: ResourceAdapter;
-		getSession: () => Promise<Session | null>;
-		origin: string;
-	}) {
-		this.#dbAdapter = dbAdapter;
-		this.#getSession = getSession;
-		this.#origin = origin;
-		this.#notificationService = createNotificationService();
-	}
+  #resource: ResourceAdapter;
+  #getSession: () => Promise<Session | null>;
+  #origin: string;
+  #notificationService: NotificationService;
+  constructor({
+    resource,
+    getSession,
+    origin,
+  }: {
+    resource: ResourceAdapter;
+    getSession: () => Promise<Session | null>;
+    origin: string;
+  }) {
+    this.#resource = resource;
+    this.#getSession = getSession;
+    this.#origin = origin;
+    this.#notificationService = createNotificationService();
+  }
 
-	async createMember(): Promise<Member> {
-		const session = await this.#getSession();
-		if (session == null) {
-			throw fail(401, { message: 'Can not create member. reason: Unauthorized' });
-		}
-		
-		const found = await this.#dbAdapter.getUser({ id: session.user.id });
-		if (found != null) return found;
+  async createMember(): Promise<Member> {
+    const session = await this.#getSession();
+    if (session == null) {
+      throw fail(401, {
+        message: "Can not create member. reason: Unauthorized",
+      });
+    }
 
-		const newUser = await this.#dbAdapter.registerUser({
-			id: session.user.id,
-			email: session.user.email ?? '',
-			name: session.user.name ?? '',
-			image: session.user.image ?? MemberDefaultProfile.image1
-		});
+    const found = await this.#resource.getUser({ id: session.user.id });
+    if (found != null) return found;
 
-		await this.#notificationService.sendOnCreatedUser(newUser);
+    const newUser = await this.#resource.registerUser({
+      id: session.user.id,
+      email: session.user.email ?? "",
+      name: session.user.name ?? "",
+      image: session.user.image ?? MemberDefaultProfile.image1,
+    });
 
-		return newUser;
-	}
+    await this.#notificationService.sendOnCreatedUser(newUser);
 
-	async findAllProjectsOfMember() {
-		const session = await this.#getSession();
-		if (session == null) return [];
-		const memberId = session.user.id;
+    return newUser;
+  }
 
-		const result = await this.#db
-			.select({
-				id: project.id,
-				name: project.name,
-				meta: project.meta,
-				permission: projectMember.permission,
-				createdAt: project.createdAt,
-				updatedAt: project.updatedAt
-			})
-			.from(projectMember)
-			.innerJoin(project, eq(project.id, projectMember.projectId))
-			.where(and(eq(projectMember.memberId, memberId), eq(project.isDeleted, false)))
-			.orderBy(desc(project.createdAt));
+  async findAllProjectsOfMember() {
+    const session = await this.#getSession();
+    if (session == null) return [];
+    const memberId = session.user.id;
 
-		return result.map((r) => ({
-			id: r.id,
-			name: r.name,
-			meta: r.meta,
-			createdAt: r.createdAt,
-			updatedAt: r.updatedAt,
-			url: this.#getUrl({ name: r.name, id: r.id }),
-			isOwner: r.permission.isOwner ?? false
-		}));
-	}
+    const projects = await this.#resource.listUserProjects(memberId);
+    
+    return projects.map(({ project: p, permission }) => ({
+      id: p.id,
+      name: p.name,
+      meta: p.meta,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      url: this.#getUrl({ name: p.name, id: p.id }),
+      isOwner: permission.isOwner ?? false,
+    }));
+  }
 
-	async findProject(id: string): Promise<ProjectDetail> {
-		const result = this.#db
-			.select({
-				id: project.id,
-				name: project.name,
-				meta: project.meta,
-				createdAt: project.createdAt,
-				updatedAt: project.updatedAt,
-				resource: {
-					code: resource.code
-				}
-			})
-			.from(project)
-			.innerJoin(resource, eq(resource.projectId, project.id))
-			.limit(100)
-			.where(and(eq(project.id, id), eq(project.isDeleted, false)));
+  async findProject(id: string): Promise<ProjectDetail> {
+    const session = await this.#getSession();
+    const userId = session?.user.id;
 
-		const sharedMembersResult = this.#db
-			.select({
-				id: member.id,
-				name: member.email,
-				meta: member.meta,
-				permission: projectMember.permission
-			})
-			.from(projectMember)
-			.innerJoin(member, eq(member.id, projectMember.memberId))
-			.where(eq(projectMember.projectId, id));
+    const projectDetail = await this.#resource.getProjectDetails(id);
+    if (!projectDetail) {
+      throw fail(404, {
+        message: `Can not find project ${id}. reason: Not found`,
+      });
+    }
 
-		const [[found], sharedMembers] = await Promise.all([result, sharedMembersResult]);
-		if (found == null) {
-			throw fail(404, { message: `Can not find project ${id}. reason: Not found` });
-		}
+    // Check permissions
+    if (!projectDetail.permission.canView) {
+      if (session == null) {
+        throw fail(401, {
+          message: `Can not find project ${id}. reason: Unauthorized`,
+        });
+      }
 
-		const session = await this.#getSession();
-		const permission = sharedMembers.find((m) => m.id === session?.user.id)?.permission;
+      if (!projectDetail.isOwner && !projectDetail.permission.canView) {
+        throw fail(403, {
+          message: `Can not find project ${id}. reason: Forbidden`,
+        });
+      }
+    }
 
-		if (!found.meta.canView) {
-			if (session == null) {
-				throw fail(401, { message: `Can not find project ${id}. reason: Unauthorized` });
-			}
+    // Add isMe flag to shared members
+    const sharedMembers = projectDetail.sharedMembers.map(member => ({
+      ...member,
+      isMe: member.id === userId
+    })).sort((a, b) => {
+      if (a.isOwner) return -1;
+      if (b.isOwner) return 1;
+      if (a.isMe) return -1;
+      if (b.isMe) return 1;
+      return 0;
+    });
 
-			if (permission == null || (!permission.isOwner && !permission.canView)) {
-				throw fail(403, { message: `Can not find project ${id}. reason: Forbidden` });
-			}
-		}
+    return {
+      ...projectDetail,
+      url: this.#getUrl({ name: projectDetail.name, id: projectDetail.id }),
+      sharedMembers
+    };
+  }
 
-		return {
-			id: found.id,
-			name: found.name,
-			url: this.#getUrl({ name: found.name, id: found.id }),
-			createdAt: found.createdAt,
-			updatedAt: found.updatedAt,
-			resource: {
-				code: found.resource.code
-			},
-			isOwner: permission?.isOwner ?? false,
-			publicPermission: found.meta.canEdit ? 'edit' : 'view',
-			permission: permission?.isOwner
-				? {
-						canView: true,
-						canEdit: true,
-						canInvite: true
-					}
-				: {
-						canView: (found.meta?.canView || permission?.canView) ?? false,
-						canEdit: (found.meta?.canEdit || permission?.canEdit) ?? false,
-						canInvite: permission?.canInvite ?? false
-					},
-			sharedMembers: sharedMembers
-				.map(
-					({
-						id,
-						name,
-						meta: { name: email, image },
-						permission: { canEdit, canInvite, isOwner }
-					}) => {
-						let permission: Permission;
-						if (isOwner || canInvite) {
-							permission = 'invite';
-						} else if (canEdit) {
-							permission = 'edit';
-						} else {
-							permission = 'view';
-						}
-						return {
-							id: id,
-							name: name,
-							email: email,
-							image: image,
-							permission,
-							isOwner,
-							isMe: id === session?.user.id
-						};
-					}
-				)
-				.sort((a, b) => {
-					if (a.isOwner) return -1;
-					if (b.isOwner) return 1;
+  async deleteProject(id: string) {
+    const session = await this.#getSession();
+    if (session == null) {
+      throw fail(401, {
+        message: `Can not delete project ${id}. reason: Unauthorized`,
+      });
+    }
+    
+    const userId = session.user.id;
+    const permission = await this.#resource.getUserPermissions(id, userId);
 
-					if (a.isMe) return -1;
-					if (b.isMe) return 1;
+    if (permission == null) {
+      throw fail(404, {
+        message: `Can not delete project ${id}. reason: Not found`,
+      });
+    }
 
-					return 0;
-				})
-		};
-	}
+    if (permission !== 'edit' && permission !== 'invite') {
+      throw fail(403, {
+        message: `Can not delete project ${id}. reason: Forbidden`,
+      });
+    }
 
-	async deleteProject(id: string) {
-		const session = await this.#getSession();
-		if (session == null) {
-			throw fail(401, { message: `Can not delete project ${id}. reason: Unauthorized` });
-		}
-		const {
-			user: { id: memberId }
-		} = session;
-		const permission = await this.#getPermission({ projectId: id, memberId });
+    await this.#resource.archiveProject(id);
+  }
 
-		if (permission == null) {
-			throw fail(404, { message: `Can not delete project ${id}. reason: Not found` });
-		}
+  async createProject(body: ProjectCreate): Promise<ProjectDetail> {
+    const session = await this.#getSession();
+    if (session == null) {
+      throw fail(401, {
+        message: `Can not create project. reason: Unauthorized`,
+      });
+    }
 
-		const { isOwner, canEdit } = permission;
-		if (!isOwner && !canEdit) {
-			throw fail(403, { message: `Can not delete project ${id}. reason: Forbidden` });
-		}
+    const userId = session.user.id;
 
-		await this.#db.update(project).set({ isDeleted: true }).where(eq(project.id, id));
-	}
+    const project = await this.#resource.createProject({
+      name: body.name ?? "Untitled",
+      publicAccess: { view: true },
+      ownerId: userId
+    });
 
-	async createProject(body: ProjectCreate): Promise<ProjectDetail> {
-		const session = await this.#getSession();
-		if (session == null) {
-			throw fail(401, { message: `Can not create project. reason: Unauthorized` });
-		}
+    await this.#resource.saveProjectContent(project.id, {
+      code: body.resource.code
+    });
 
-		const {
-			user: { id: memberId }
-		} = session;
+    return {
+      id: project.id,
+      name: project.name,
+      url: this.#getUrl({ name: project.name, id: project.id }),
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
+      isOwner: true,
+      resource: {
+        code: body.resource.code,
+      },
+      publicPermission: project.meta.canEdit ? ("edit" as const) : ("view" as const),
+      permission: {
+        canView: true,
+        canEdit: true,
+        canInvite: true,
+      },
+      sharedMembers: [],
+    };
+  }
 
-		const [{ id: projectId, name, meta, createdAt, updatedAt }] = await this.#db
-			.insert(project)
-			.values({
-				id: crypto.randomUUID(),
-				name: body.name ?? 'Untitled',
-				meta: { canView: true },
-				isDeleted: false
-			})
-			.returning();
+  async updateProject(
+    id: string,
+    body: { name?: string; resource?: Resource }
+  ) {
+    const project = await this.#resource.getProject(id);
+    if (!project) {
+      throw fail(404, {
+        message: `Can not update project ${id}. reason: Not found`,
+      });
+    }
 
-		await Promise.all([
-			this.#db.insert(projectMember).values({
-				id: crypto.randomUUID(),
-				projectId,
-				memberId,
-				permission: { isOwner: true, canView: true, canEdit: true, canInvite: true }
-			}),
-			this.#db.insert(resource).values({
-				id: crypto.randomUUID(),
-				projectId,
-				code: body.resource.code,
-				model: {} as ProjectModel
-			})
-		]);
+    const session = await this.#getSession();
+    let forbidden = false;
+    
+    if (session == null) {
+      if (!project.meta.canEdit) {
+        forbidden = true;
+      }
+    } else {
+      const permission = await this.#resource.getUserPermissions(id, session.user.id);
+      if (permission !== 'edit' && permission !== 'invite') {
+        forbidden = true;
+      }
+    }
 
-		return {
-			id: projectId,
-			name,
-			url: this.#getUrl({ name, id: projectId }),
-			createdAt,
-			updatedAt,
-			isOwner: true,
-			resource: {
-				code: body.resource.code
-			},
-			publicPermission: meta.canEdit ? ('edit' as const) : ('view' as const),
-			permission: {
-				canView: true,
-				canEdit: true,
-				canInvite: true
-			},
-			sharedMembers: []
-		};
-	}
+    if (forbidden) {
+      throw fail(403, {
+        message: `Can not update project ${id}. reason: Forbidden`,
+      });
+    }
 
-	async updateProject(id: string, body: { name?: string; resource?: Resource }) {
-		const found = await this.#findProject(id);
-		if (found == null) {
-			throw fail(404, { message: `Can not update project ${id}. reason: Not found` });
-		}
+    const updates: any = {};
+    if (body.name != null) {
+      updates.name = body.name;
+    }
 
-		const session = await this.#getSession();
-		let forbidden = false;
-		if (session == null) {
-			if (!found.meta.canEdit) {
-				forbidden = true;
-			}
-		} else {
-			const { isOwner, canEdit } = await this.#getPermission({
-				projectId: id,
-				memberId: session.user.id
-			});
+    if (Object.keys(updates).length > 0) {
+      await this.#resource.updateProject(id, updates);
+    }
 
-			if (!isOwner && !canEdit) {
-				forbidden = true;
-			}
-		}
+    if (body.resource != null) {
+      await this.#resource.saveProjectContent(id, {
+        code: body.resource.code
+      });
+    }
+  }
 
-		if (forbidden) {
-			throw fail(403, { message: `Can not update project ${id}. reason: Forbidden` });
-		}
-		let updateProjectPromise;
-		if (body.name != null) {
-			updateProjectPromise = this.#db
-				.update(project)
-				.set({ name: body.name, updatedAt: new Date() })
-				.where(eq(project.id, id));
-		}
+  async updatePermission(id: string, body: UpdatePermission): Promise<void> {
+    if (body.type === "public") {
+      return this.#updatePublicPermission(id, body);
+    } else {
+      return this.#updateMemberPermission(id, body);
+    }
+  }
 
-		let updateResourcePromise;
-		if (body.resource != null) {
-			updateResourcePromise = this.#db
-				.update(resource)
-				.set({ code: body.resource.code })
-				.where(eq(resource.projectId, id));
-		}
+  async #updatePublicPermission(
+    projectId: string,
+    { permission }: UpdatePublicPermission
+  ): Promise<void> {
+    const session = await this.#getSession();
+    if (session == null) {
+      throw fail(401, { message: 'Can not update permission. reason: Unauthorized' });
+    }
 
-		await Promise.all([updateProjectPromise, updateResourcePromise]);
-	}
+    const userPermission = await this.#resource.getUserPermissions(projectId, session.user.id);
+    if (userPermission !== 'invite') {
+      throw fail(403, { message: 'Can not update permission. reason: Forbidden' });
+    }
 
-	async updatePermission(id: string, body: UpdatePermission): Promise<void> {
-		if (body.type === 'public') {
-			return this.#updatePublicPermission(id, body);
-		} else {
-			return this.#updateMemberPermission(id, body);
-		}
-	}
+    const publicAccess = this.#resolvePermissionToPublicAccess(permission);
+    await this.#resource.updateProject(projectId, { publicAccess });
+  }
 
-	async #updatePublicPermission(
-		projectId: string,
-		{ permission }: UpdatePublicPermission
-	): Promise<void> {
-		await this.#validateBeforePermissionUpdate({ projectId });
-		const found = await this.#findProject(projectId);
-		if (found == null) {
-			throw fail(404, {
-				message: `Can not update permission. reason: Not found project ${projectId}`
-			});
-		}
+  async createMemberPermission(
+    projectId: string,
+    { email, permission }: CreateMemberPermission
+  ): Promise<SharedMember> {
+    const session = await this.#getSession();
+    if (session == null) {
+      throw fail(401, { message: 'Can not update permission. reason: Unauthorized' });
+    }
 
-		await this.#db
-			.update(project)
-			.set({ meta: { ...found.meta, ...this.#resolvePermission(permission) } })
-			.where(eq(project.id, projectId));
-	}
+    const userPermission = await this.#resource.getUserPermissions(projectId, session.user.id);
+    if (userPermission !== 'invite') {
+      throw fail(403, { message: 'Can not update permission. reason: Forbidden' });
+    }
 
-	async createMemberPermission(
-		projectId: string,
-		{ email, permission }: CreateMemberPermission
-	): Promise<SharedMember> {
-		await this.#validateBeforePermissionUpdate({ projectId });
-		const [found] = await this.#db.select().from(member).where(eq(member.email, email)).execute();
-		if (found == null) {
-			throw fail(404, {
-				message: `Can not update permission. reason: Not found member ${email}`
-			});
-		}
+    const user = await this.#resource.getUser({ email });
+    if (!user) {
+      throw fail(404, {
+        message: `Can not update permission. reason: Not found member ${email}`,
+      });
+    }
 
-		await this.#db
-			.insert(projectMember)
-			.values({
-				id: crypto.randomUUID(),
-				memberId: found.id,
-				projectId,
-				permission: this.#resolvePermission(permission)
-			})
-			.execute();
+    const role = this.#permissionToRole(permission);
+    await this.#resource.addCollaborator(projectId, {
+      userId: user.id,
+      role
+    });
 
-		return {
-			...found,
-			name: found.meta.name,
-			image: found.meta.image,
-			permission
-		};
-	}
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      permission,
+      isOwner: false
+    };
+  }
 
-	async #updateMemberPermission(
-		projectId: string,
-		{ memberId, permission }: UpdateMemberPermission
-	): Promise<void> {
-		await this.#validateBeforePermissionUpdate({ projectId });
+  async #updateMemberPermission(
+    projectId: string,
+    { memberId, permission }: UpdateMemberPermission
+  ): Promise<void> {
+    const session = await this.#getSession();
+    if (session == null) {
+      throw fail(401, { message: 'Can not update permission. reason: Unauthorized' });
+    }
 
-		const member = await this.#findMember(memberId);
-		if (member == null) {
-			throw fail(404, {
-				message: `Can not update permission. reason: Not found member ${memberId}`
-			});
-		}
-		await this.#db
-			.update(projectMember)
-			.set({ permission: this.#resolvePermission(permission) })
-			.where(and(eq(projectMember.memberId, memberId), eq(projectMember.projectId, projectId)))
-			.execute();
-	}
+    const userPermission = await this.#resource.getUserPermissions(projectId, session.user.id);
+    if (userPermission !== 'invite') {
+      throw fail(403, { message: 'Can not update permission. reason: Forbidden' });
+    }
 
-	async deletePermission(projectId: string, { memberId }: DeletePermission) {
-		await this.#db
-			.delete(projectMember)
-			.where(and(eq(projectMember.projectId, projectId), eq(projectMember.memberId, memberId)))
-			.execute();
-	}
+    const user = await this.#resource.getUser({ id: memberId });
+    if (!user) {
+      throw fail(404, {
+        message: `Can not update permission. reason: Not found member ${memberId}`,
+      });
+    }
 
-	async #getPermission({ projectId, memberId }: { projectId: string; memberId: string }) {
-		const [{ permission }] = await this.#db
-			.select({ permission: projectMember.permission })
-			.from(projectMember)
-			.where(and(eq(projectMember.projectId, projectId), eq(projectMember.memberId, memberId)));
-		return permission;
-	}
+    const role = this.#permissionToRole(permission);
+    await this.#resource.updateCollaborator(projectId, memberId, { role });
+  }
 
-	#getUrl(project: { name: string; id: string }) {
-		if (!project.name) return `/workspace/${project.id}`;
+  async deletePermission(projectId: string, { memberId }: DeletePermission) {
+    const session = await this.#getSession();
+    if (session == null) {
+      throw fail(401, { message: 'Can not delete permission. reason: Unauthorized' });
+    }
 
-		const name = project.name.replace(/ /g, '-').toLowerCase();
-		return `${this.#origin}/workspace/${name}-${project.id}`;
-	}
+    const userPermission = await this.#resource.getUserPermissions(projectId, session.user.id);
+    if (userPermission !== 'invite') {
+      throw fail(403, { message: 'Can not delete permission. reason: Forbidden' });
+    }
 
-	#resolvePermission(permission: Permission) {
-		switch (permission) {
-			case 'view':
-				return { canView: true, canEdit: false, canInvite: false };
-			case 'edit':
-				return { canView: true, canEdit: true, canInvite: false };
-			case 'invite':
-				return { canView: true, canEdit: true, canInvite: true };
-			default:
-				assertUnreachable(permission, 'Invalid permission');
-		}
-	}
+    await this.#resource.removeCollaborator(projectId, memberId);
+  }
 
-	async #findMember(id: string) {
-		const members = await this.#db.select().from(member).where(eq(member.id, id));
-		if (members.length == 0) return null;
-		const result = members[0];
+  #getUrl(project: { name: string; id: string }) {
+    if (!project.name) return `/workspace/${project.id}`;
 
-		return {
-			id: result.id,
-			name: result.meta.name,
-			email: result.email,
-			image: result.meta.image
-		};
-	}
+    const name = project.name.replace(/ /g, "-").toLowerCase();
+    return `${this.#origin}/workspace/${name}-${project.id}`;
+  }
 
-	async #findProject(id: string) {
-		const [found] = await this.#db.select().from(project).where(eq(project.id, id)).execute();
-		return found;
-	}
+  #resolvePermissionToPublicAccess(permission: Permission) {
+    switch (permission) {
+      case "view":
+        return { view: true, edit: false };
+      case "edit":
+        return { view: true, edit: true };
+      case "invite":
+        return { view: true, edit: true };
+      default:
+        assertUnreachable(permission, "Invalid permission");
+    }
+  }
 
-	async #validateBeforePermissionUpdate({ projectId }: { projectId: string }) {
-		const session = await this.#getSession();
-		if (session == null) {
-			throw fail(401, { message: `Can not update permission. reason: Unauthorized` });
-		}
-
-		const [me] = await this.#db
-			.select({
-				id: projectMember.id,
-				permission: projectMember.permission
-			})
-			.from(projectMember)
-			.where(
-				and(eq(projectMember.memberId, session.user.id), eq(projectMember.projectId, projectId))
-			)
-			.execute();
-
-		if (!me.permission.canInvite) {
-			throw fail(403, { message: `Can not update permission. reason: Forbidden id: ${me.id}` });
-		}
-	}
+  #permissionToRole(permission: Permission): 'owner' | 'editor' | 'viewer' {
+    switch (permission) {
+      case "view":
+        return 'viewer';
+      case "edit":
+        return 'editor';
+      case "invite":
+        return 'editor'; // ResourceAdapter doesn't have invite role, use editor
+      default:
+        assertUnreachable(permission, "Invalid permission");
+    }
+  }
 }
