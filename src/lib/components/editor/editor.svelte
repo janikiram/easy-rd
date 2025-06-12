@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
 
 	import { onDestroy, onMount } from 'svelte';
 	import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -45,13 +44,11 @@
 		}
 	}
 
-	run(() => {
-		[code];
+	$effect(() => {
 		codeChangeSyncEffect();
 	});
 
-	run(() => {
-		markers;
+	$effect(() => {
 		setMarkers();
 	});
 

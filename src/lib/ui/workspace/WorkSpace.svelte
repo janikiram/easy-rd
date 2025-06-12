@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
 
 	import { ProjectModel, emptyProjectModel } from '$lib/dbml/type';
 	import type { CompilerDiagnostic, CompilerError } from '$lib/dbml';
@@ -43,9 +42,8 @@
 		projectChangeEffect();
 	};
 	
-	let id = $derived($project.id);
-	run(() => {
-		[id];
+	$effect(() => {
+		const currentId = $project.id;
 		projectChangeEffect();
 	});
 </script>

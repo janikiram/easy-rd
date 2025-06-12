@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
 
 	import ToolBar from '$lib/ui/workspace/toolbar';
 	import WorkSpace from '$lib/ui/workspace/WorkSpace.svelte';
@@ -19,11 +18,10 @@
 		if (!browser) return;
 		projectManager.load({ project: data.project });
 	}
-	run(() => {
+	$effect(() => {
 		id = data.project.id;
 	});
-	run(() => {
-		[id];
+	$effect(() => {
 		projectChangeEffect();
 	});
 </script>

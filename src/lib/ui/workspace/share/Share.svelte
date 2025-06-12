@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { preventDefault } from 'svelte/legacy';
 
 	import { isConfirm } from '$lib/components/confirm/confirm';
 	import { toast } from '$lib/components/toast';
@@ -106,7 +105,10 @@
 		<div class=" border-[#B5B5B5] border-t m-[0_0_20px_0] h-[1px]"></div>
 		<div class="m-[0_19px_0_20px] flex flex-col w-[calc(100%_-_39px)]">
 			<form
-				onsubmit={preventDefault(handleInvite)}
+				onsubmit={(e) => {
+					e.preventDefault();
+					handleInvite();
+				}}
 				class="m-[0_1px_30px_0] flex flex-row justify-between w-[calc(100%_-_1px)]"
 			>
 				<div

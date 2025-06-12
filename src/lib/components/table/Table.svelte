@@ -9,10 +9,6 @@
 	}
 
 	let { id = undefined, head, data }: Props = $props();
-	interface $$Slots {
-		head: any;
-		data: any;
-	}
 
 	let tableHeadEl: HTMLElement = $state();
 	let headItemCount = 0;

@@ -1,5 +1,3 @@
-<!-- @migration-task Error while migrating Svelte code: `<td>` must be the child of a `<tr>`, not a `<a>`. The browser will 'repair' the HTML (by moving, removing, or inserting elements) which breaks Svelte's assumptions about the structure of your components.
-https://svelte.dev/e/node_invalid_placement -->
 <script lang="ts">
 	import Table from '$lib/components/table/Table.svelte';
 	import DeleteIcon from './assets/delete.svg';
@@ -135,7 +133,7 @@ https://svelte.dev/e/node_invalid_placement -->
 		<div class="p-2.5">
 			<ul class="menu">
 				<li>
-					<button on:click={handleClickNewDiagram}>
+					<button onclick={handleClickNewDiagram}>
 						<span class="w-5 shrink-0 h-5 mr-4 img-placeholder"></span>
 						<span class=""> New Diagram </span>
 					</button>
@@ -148,13 +146,13 @@ https://svelte.dev/e/node_invalid_placement -->
 				</li>
 				<li class="w-full border-t border-[#565656] shrink-0 my-[2.5px]"></li>
 				<li>
-					<button on:click={handleClickMyDiagrams} class:active={!sharedWithMe}>
+					<button onclick={handleClickMyDiagrams} class:active={!sharedWithMe}>
 						<span class="w-5 shrink-0 h-5 mr-4 img-placeholder"></span>
 						<span class=""> My Diagrams </span>
 					</button>
 				</li>
 				<li>
-					<button on:click={handleClickSharedWithMe} class:active={sharedWithMe}>
+					<button onclick={handleClickSharedWithMe} class:active={sharedWithMe}>
 						<span class="w-5 shrink-0 h-5 mr-4 img-placeholder"></span>
 						<span class=""> Shared With Me </span>
 					</button>
@@ -196,24 +194,24 @@ https://svelte.dev/e/node_invalid_placement -->
 
 		<div class="dashboard-table">
 			<Table>
-				<tr
-					class="text-xs sticky top-0 bg-[#373C44] text-[#8696b6] font-semibold text-left [&_th]:p-3"
-					slot="head"
-				>
-					<th class="w-[340px]">Name</th>
-					<th>Date Modified</th>
-					<th>Date Created</th>
-					<th class="w-4"></th>
-				</tr>
+				{#snippet head()}
+					<tr
+						class="text-xs sticky top-0 bg-[#373C44] text-[#8696b6] font-semibold text-left [&_th]:p-3"
+					>
+						<th class="w-[340px]">Name</th>
+						<th>Date Modified</th>
+						<th>Date Created</th>
+						<th class="w-4"></th>
+					</tr>
+				{/snippet}
 
-				<tbody slot="data">
+				{#snippet data()}
+					<tbody>
 					{#each items as item (item.id)}
-						<a
-							role="row"
+						<tr
 							animate:flip
-							on:click={handleClickProject(item.id)}
-							href={item.url}
-							class="text-xs table-row hover:bg-[#1e2022] text-[#8696b6] text-left max-h-[46px] h-[46px] [&_td]:align-middle [&_td]:px-1"
+							class="text-xs hover:bg-[#1e2022] text-[#8696b6] text-left max-h-[46px] h-[46px] [&_td]:align-middle [&_td]:px-1 cursor-pointer"
+							onclick={() => goto(item.url)}
 						>
 							<td>
 								<div class="flex items-center">
@@ -232,14 +230,18 @@ https://svelte.dev/e/node_invalid_placement -->
 									class="z-10 hover:bg-red-500 w-8 h-8 flex items-center justify-center"
 									aria-label="delete project"
 									type="button"
-									on:click={handleClickDelete(item.id)}
+									onclick={(e) => {
+										e.stopPropagation();
+										handleClickDelete(item.id)(e);
+									}}
 								>
 									<img src={DeleteIcon} alt="delete" class="w-5 h-5" />
 								</button>
 							</td>
-						</a>
+						</tr>
 					{/each}
-				</tbody>
+					</tbody>
+				{/snippet}
 			</Table>
 		</div>
 	</section>
