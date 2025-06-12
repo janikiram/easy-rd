@@ -7,8 +7,8 @@
 	import { goto } from '$app/navigation';
 	import Profile from '../Profile.svelte';
 
-	let dashboardOpen = false;
-	let shareOpen = false;
+	let dashboardOpen = $state(false);
+	let shareOpen = $state(false);
 	const project = projectManager.project;
 	const handleClickSave = async () => {
 		const { url } = await projectManager.create($project);
@@ -26,7 +26,7 @@
 </script>
 
 <header>
-	<button on:click={handleClickMenu} class="flex gap-1 items-center">
+	<button onclick={handleClickMenu} class="flex gap-1 items-center">
 		<img class="w-8 h-8 rounded-full overflow-hidden" src={MenuIcon} alt="menu" />
 		<img class="w-2.5 h-2.5 invert" src={ArrowDownIcon} alt="arrow-down" />
 	</button>
@@ -36,16 +36,16 @@
 			class="w-full h-[20px] bg-transparent text-white px-2 focus-within:outline-none"
 			placeholder="Untitled"
 			bind:value={$project.name}
-			on:input={handleInputChange}
+			oninput={handleInputChange}
 		/>
 	</div>
 	{#if !$project.id}
-		<button on:click={handleClickSave} aria-label="save" class="box menu-btn">
+		<button onclick={handleClickSave} aria-label="save" class="box menu-btn">
 			<img src={SaveIcon} alt="save" />
 			<span class="ml-2">Save</span>
 		</button>
 	{:else if $project.permission.canInvite}
-		<button on:click={handleClickShare} aria-label="share" class="box menu-btn">
+		<button onclick={handleClickShare} aria-label="share" class="box menu-btn">
 			<img class="w-4" src={ShareIcon} alt="share" />
 			<span class="ml-2">Share</span>
 		</button>

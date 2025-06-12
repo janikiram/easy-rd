@@ -2,7 +2,11 @@
 	import { signIn } from '@auth/sveltekit/client';
 	import { GithubLogoIcon as githubIcon } from './assets';
 
-	export let redirect: string;
+	interface Props {
+		redirect: string;
+	}
+
+	let { redirect }: Props = $props();
 	const handleGithubSignIn = () => {
 		signIn('github', { callbackUrl: `/signin/after?redirect=${redirect}` });
 	};
@@ -16,7 +20,7 @@
 	<p class="mt-[62px]">Please login with your GitHub account</p>
 	<button
 		aria-label="Sign in with Github"
-		on:click={handleGithubSignIn}
+		onclick={handleGithubSignIn}
 		class="mt-4 mb-5 login-button"
 	>
 		<span class="bg-white w-[60px] h-full shrink-0 flex items-center justify-center">

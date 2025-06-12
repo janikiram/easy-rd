@@ -1,3 +1,4 @@
+<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot (trigger to trigger_1) making the component unusable -->
 <script lang="ts">
 	import { setContext } from 'svelte';
 	import { cn } from '$lib/utils';

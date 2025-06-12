@@ -3,7 +3,7 @@
 	import WorkSpace from '$lib/ui/workspace/WorkSpace.svelte';
 	import { getUserContext, projectManager } from '$lib/store';
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
 	const user = getUserContext();
@@ -13,7 +13,7 @@
 	onMount(async () => {
 		if (user == null) return goto('/workspace/demo');
 
-		const willSave = $page.url.searchParams.get('save') === 'true';
+		const willSave = page.url.searchParams.get('save') === 'true';
 		if (willSave) {
 			const { url } = await projectManager.create($project);
 			return goto(url);

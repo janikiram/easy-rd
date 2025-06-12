@@ -2,7 +2,11 @@
 	import type { PageData } from './$types';
 	import { signIn } from '@auth/sveltekit/client';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 	const { session } = data;
 
 	const handleGithubSignIn = () => {
@@ -16,7 +20,7 @@
 	<div class="container">
 		<div class="form">
 			<div class="panel">Easy-RD</div>
-			<button class="login-button" on:click={handleGithubSignIn}>
+			<button class="login-button" onclick={handleGithubSignIn}>
 				<img src="https://authjs.dev/img/providers/github.svg" alt="github-logo" />Sign in with
 				Github
 			</button>

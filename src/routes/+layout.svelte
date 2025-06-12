@@ -7,7 +7,12 @@
 	import { MetaTags } from 'svelte-meta-tags';
 	import { page } from '$app/stores';
 	import { ToastRoot } from '$lib/components/toast';
-	export let data: LayoutData;
+	interface Props {
+		data: LayoutData;
+		children?: import('svelte').Snippet;
+	}
+
+	let { data, children }: Props = $props();
 
 	initUserContext(data.user);
 </script>
@@ -20,7 +25,7 @@
 	</script>
 </svelte:head>
 
-<slot />
+{@render children?.()}
 
 <MetaTags
 	title={$page.data.seo.title}

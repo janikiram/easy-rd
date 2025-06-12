@@ -5,8 +5,12 @@
 
 	type Subscribe = (callback: (project: Project) => void) => () => void;
 
-	export let project: Project;
-	export let subscribe: Subscribe = () => () => {};
+	interface Props {
+		project: Project;
+		subscribe?: Subscribe;
+	}
+
+	let { project, subscribe = () => () => {} }: Props = $props();
 </script>
 
 <Widget widget={Diagram({ project, subscribe })} width="100%" height="100%" />

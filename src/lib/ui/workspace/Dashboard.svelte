@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: `<td>` must be the child of a `<tr>`, not a `<a>`. The browser will 'repair' the HTML (by moving, removing, or inserting elements) which breaks Svelte's assumptions about the structure of your components.
+https://svelte.dev/e/node_invalid_placement -->
 <script lang="ts">
 	import Table from '$lib/components/table/Table.svelte';
 	import DeleteIcon from './assets/delete.svg';

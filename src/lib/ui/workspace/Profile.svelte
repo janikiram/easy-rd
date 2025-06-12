@@ -11,6 +11,7 @@
 
 <Dropdown trigger="hover" position="bottom-end">
 	<!-- Trigger -->
+	<!-- @migration-task: migrate this slot by hand, `trigger` would shadow a prop on the parent component -->
 	<figure slot="trigger" class="w-8 h-8 rounded-full overflow-hidden shrink-0">
 		<img class="w-full h-full" src={$user?.image} alt="user avatar" />
 	</figure>
@@ -20,7 +21,7 @@
 			{$user?.email}
 		</div>
 		<hr class="border-t border-gray-600" />
-		<button on:click={handleClickSignOut} role="menuitem" class="item">
+		<button onclick={handleClickSignOut} role="menuitem" class="item">
 			<img src={LogoutIcon} alt="logout" class="w-6 h-6 mr-2" />
 			Sign Out
 		</button>
