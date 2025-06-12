@@ -1,4 +1,5 @@
 <script lang="ts">
+
 	import { ProjectModel, emptyProjectModel } from '$lib/dbml/type';
 	import type { CompilerDiagnostic, CompilerError } from '$lib/dbml';
 	import { Diagram } from '$lib/components/diagram';
@@ -15,8 +16,7 @@
 		throw new Error('parse is undefined');
 	};
 
-	let markers: Monaco.editor.IMarkerData[];
-	$: markers = [];
+	let markers: Monaco.editor.IMarkerData[] = $state([]);
 
 	onMount(async () => {
 		const dbml = await import('$lib/dbml');
@@ -25,11 +25,6 @@
 		projectChangeEffect();
 	});
 
-	$: id = $project.id;
-	$: {
-		[id];
-		projectChangeEffect();
-	}
 	async function projectChangeEffect() {
 		markers = [];
 		try {
@@ -46,6 +41,11 @@
 		projectManager.update({ resource: $project.resource });
 		projectChangeEffect();
 	};
+	
+	$effect(() => {
+		const currentId = $project.id;
+		projectChangeEffect();
+	});
 </script>
 
 <main>

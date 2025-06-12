@@ -2,6 +2,11 @@
 	import Header from '$lib/ui/app-layout/Header.svelte';
 	import Footer from '$lib/ui/app-layout/Footer.svelte';
 	import { signOut } from '@auth/sveltekit/client';
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	let { children }: Props = $props();
 
 	function handleSignOutClicked() {
 		signOut();
@@ -11,7 +16,7 @@
 <div class="layout">
 	<Header on:signOut={handleSignOutClicked} />
 	<div class="content">
-		<slot />
+		{@render children?.()}
 		<Footer />
 	</div>
 </div>

@@ -379,7 +379,7 @@ export class Service implements IService {
     }
   }
 
-  #permissionToRole(permission: Permission): 'owner' | 'editor' | 'viewer' {
+  #permissionToRole(permission: Permission): 'editor' | 'viewer' {
     switch (permission) {
       case "view":
         return 'viewer';

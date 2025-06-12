@@ -3,10 +3,19 @@
 	import { isConfirmStore } from './confirm';
 	import { onClickOutside } from '$lib/action';
 
-	export let title: string;
-	export let description: string;
-	export let cancel: string = 'Cancel';
-	export let confirm: string = 'Confirm';
+	interface Props {
+		title: string;
+		description: string;
+		cancel?: string;
+		confirm?: string;
+	}
+
+	let {
+		title,
+		description,
+		cancel = 'Cancel',
+		confirm = 'Confirm'
+	}: Props = $props();
 
 	const { close } = getContext<{ close: () => void }>('popup');
 	const handleConfirm = (value: boolean) => () => {
@@ -36,7 +45,7 @@
 	<div class="flex flex-row ml-auto">
 		<button
 			type="button"
-			on:click={handleConfirm(false)}
+			onclick={handleConfirm(false)}
 			class="rounded-[3.3px] border border-[#EDF2F7] m-[0_19.5px_0_0] flex flex-row justify-center p-[6.3px_19.7px_6.8px_19.7px]"
 		>
 			<span class="break-words font-semibold text-[13px] leading-[1.5] text-[#F5F6F8]">
@@ -44,7 +53,7 @@
 			</span>
 		</button>
 		<button
-			on:click={handleConfirm(true)}
+			onclick={handleConfirm(true)}
 			class="rounded-[3.3px] bg-[#FC8181] flex flex-row justify-center p-[7.3px_19.8px_7.8px_19.8px]"
 		>
 			<span class="break-words font-semibold text-[13px] leading-[1.5] text-[#FFFFFF]">

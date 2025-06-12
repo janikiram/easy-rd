@@ -3,8 +3,8 @@
 	import { SaveIcon, ArrowDownIcon, LoginIcon, LogoIcon as MenuIcon } from '../assets';
 	import Popup from '$lib/components/popup/Popup.svelte';
 	import { projectManager } from '$lib/store';
-	let redirect: string = '/workspace/demo';
-	let open = false;
+	let redirect: string = $state('/workspace/demo');
+	let open = $state(false);
 	const project = projectManager.project;
 
 	const handleClickSave = () => {
@@ -33,13 +33,13 @@
 		/>
 	</div>
 	{#if !$project.id}
-		<button on:click={handleClickSave} aria-label="save" class="box menu-btn">
+		<button onclick={handleClickSave} aria-label="save" class="box menu-btn">
 			<img src={SaveIcon} alt="save" />
 			<span class="ml-2">Save</span>
 		</button>
 	{/if}
 
-	<button on:click={handleClickLogin} aria-label="login" class="box menu-btn ml-auto mr-2">
+	<button onclick={handleClickLogin} aria-label="login" class="box menu-btn ml-auto mr-2">
 		<img src={LoginIcon} alt="login" />
 		<span class="ml-2">Login</span>
 	</button>

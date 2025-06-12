@@ -3,33 +3,25 @@
 	import { cn } from '$lib/utils';
 	import Portal from '$lib/components/portal';
 	import { onClickOutside } from '$lib/action';
+	import type { Snippet } from 'svelte';
 
-	interface $$Slots {
-		default: {
-			close: () => void;
-		};
-		trigger: {};
-		content: {
-			close: () => void;
-		};
+	interface Props {
+		disabled?: boolean;
+		trigger?: 'click' | 'hover';
+		position?: 'bottom-end' | 'bottom' | 'bottom-start' | 'top-end' | 'top' | 'top-start' | 'left-end' | 'left' | 'left-start' | 'right-end' | 'right' | 'right-start';
+		children?: Snippet<[{ close: () => void }]>;
+		triggerSlot?: Snippet;
 	}
 
-	let isOpen = false;
-	export let disabled = false;
-	export let trigger: 'click' | 'hover' = 'click';
-	export let position:
-		| 'bottom-end'
-		| 'bottom'
-		| 'bottom-start'
-		| 'top-end'
-		| 'top'
-		| 'top-start'
-		| 'left-end'
-		| 'left'
-		| 'left-start'
-		| 'right-end'
-		| 'right'
-		| 'right-start' = 'bottom';
+	let {
+		disabled = false,
+		trigger = 'click',
+		position = 'bottom',
+		children,
+		triggerSlot
+	}: Props = $props();
+
+	let isOpen = $state(false);
 	function close() {
 		isOpen = false;
 	}
@@ -49,7 +41,8 @@
 			close();
 		}
 	};
-	const handleClick = () => {
+	const handleClick = (e: MouseEvent) => {
+		e.preventDefault();
 		if (trigger === 'click') {
 			isOpen ? close() : open();
 		}
@@ -64,26 +57,30 @@
 	type="button"
 	aria-haspopup="menu"
 	bind:this={controllerRef}
-	on:mouseenter={handleMouseEnter}
-	on:click|preventDefault={handleClick}
+	onmouseenter={handleMouseEnter}
+	onclick={handleClick}
 	class:cursor-default={trigger === 'hover'}
 	class="relative inline grow-0 shrink-0 p-0 m-0"
 >
-	<slot name="trigger" />
+	{#if triggerSlot}
+		{@render triggerSlot()}
+	{/if}
 </button>
 
 {#if isOpen}
 	<Portal target="body">
 		<button
 			use:onClickOutside={close}
-			on:click|preventDefault={handleClick}
-			on:mouseleave={handleMouseLeave}
+			onclick={handleClick}
+			onmouseleave={handleMouseLeave}
 			class:cursor-default={trigger === 'hover'}
 			style="top: {controllerRect.top}px; left: {controllerRect.left}px; width: {controllerRect.width}px; height: {controllerRect.height}px;"
 			class="fixed"
 		>
 			<div role="menu" class={cn('dropdown-content', position)}>
-				<slot {close} />
+				{#if children}
+					{@render children({ close })}
+				{/if}
 			</div>
 		</button>
 	</Portal>

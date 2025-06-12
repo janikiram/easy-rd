@@ -2,13 +2,15 @@
 	import { onMount } from 'svelte';
 
 	type T = $$Generic;
-	export let id: string | undefined = undefined;
-	interface $$Slots {
-		head: any;
-		data: any;
+	interface Props {
+		id?: string | undefined;
+		head?: import('svelte').Snippet;
+		data?: import('svelte').Snippet;
 	}
 
-	let tableHeadEl: HTMLElement;
+	let { id = undefined, head, data }: Props = $props();
+
+	let tableHeadEl: HTMLElement = $state();
 	let headItemCount = 0;
 	onMount(() => {
 		if (tableHeadEl) {
@@ -20,9 +22,9 @@
 <div {id} data-table-type="table-wrapper">
 	<table class="w-full table-auto">
 		<thead bind:this={tableHeadEl}>
-			<slot name="head" />
+			{@render head?.()}
 		</thead>
-		<slot name="data" />
+		{@render data?.()}
 	</table>
 </div>
 

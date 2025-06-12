@@ -1,25 +1,29 @@
 <script lang="ts">
+
 	import ToolBar from '$lib/ui/workspace/toolbar';
 	import WorkSpace from '$lib/ui/workspace/WorkSpace.svelte';
 	import type { PageData } from './$types';
-	export let data: PageData;
 	import { getUserContext, projectManager } from '$lib/store';
 	import { browser } from '$app/environment';
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	const user = getUserContext();
-	let id = data.project.id;
-	$: {
-		id = data.project.id;
-	}
+	let id = $state(data.project.id);
 
-	$: {
-		[id];
-		projectChangeEffect();
-	}
 	function projectChangeEffect() {
 		if (!browser) return;
 		projectManager.load({ project: data.project });
 	}
+	$effect(() => {
+		id = data.project.id;
+	});
+	$effect(() => {
+		projectChangeEffect();
+	});
 </script>
 
 {#if $user}

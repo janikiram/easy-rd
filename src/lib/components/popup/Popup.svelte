@@ -6,8 +6,19 @@
 	import { setContext } from 'svelte';
 	import { onClickOutside } from '$lib/action';
 	import Portal from 'svelte-portal';
-	export let open = false;
-	export let closeOnClickOutside = false;
+	interface Props {
+		open?: boolean;
+		closeOnClickOutside?: boolean;
+		exit?: import('svelte').Snippet;
+		children?: import('svelte').Snippet<[any]>;
+	}
+
+	let {
+		open = $bindable(false),
+		closeOnClickOutside = false,
+		exit,
+		children
+	}: Props = $props();
 
 	function fly({}: {}): TransitionConfig {
 		return {
@@ -31,7 +42,7 @@
 	setContext('popup', { close });
 </script>
 
-<svelte:window on:keydown={(e) => e.key === 'Escape' && (open = false)} />
+<svelte:window onkeydown={(e) => e.key === 'Escape' && (open = false)} />
 {#if open}
 	<Portal target="body">
 		<div
@@ -39,12 +50,12 @@
 			class="fixed inset-0 bg-black/60 flex justify-center items-center"
 		></div>
 		<div use:onClickOutside={handleClickOutside} transition:fly class={cn('popup ', 'middle')}>
-			<button class="exit" aria-label="close" on:click={() => (open = false)}>
-				<slot name="exit">
+			<button class="exit" aria-label="close" onclick={() => (open = false)}>
+				{#if exit}{@render exit()}{:else}
 					<img class="size-6" src={ExitIcon} alt="exit" />
-				</slot>
+				{/if}
 			</button>
-			<slot {close} />
+			{@render children?.({ close, })}
 		</div>
 	</Portal>
 {/if}

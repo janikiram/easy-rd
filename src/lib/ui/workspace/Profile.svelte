@@ -10,21 +10,24 @@
 </script>
 
 <Dropdown trigger="hover" position="bottom-end">
-	<!-- Trigger -->
-	<figure slot="trigger" class="w-8 h-8 rounded-full overflow-hidden shrink-0">
-		<img class="w-full h-full" src={$user?.image} alt="user avatar" />
-	</figure>
-	<!-- Content -->
-	<div class="min-w-[200px] rounded bg-[#373C44] text-white p-1.5 translate-x-4">
-		<div class="h-[36px] flex items-center text-sm w-full pl-3">
-			{$user?.email}
+	{#snippet triggerSlot()}
+		<figure class="w-8 h-8 rounded-full overflow-hidden shrink-0">
+			<img class="w-full h-full" src={$user?.image} alt="user avatar" />
+		</figure>
+	{/snippet}
+	
+	{#snippet children()}
+		<div class="min-w-[200px] rounded bg-[#373C44] text-white p-1.5 translate-x-4">
+			<div class="h-[36px] flex items-center text-sm w-full pl-3">
+				{$user?.email}
+			</div>
+			<hr class="border-t border-gray-600" />
+			<button onclick={handleClickSignOut} role="menuitem" class="item">
+				<img src={LogoutIcon} alt="logout" class="w-6 h-6 mr-2" />
+				Sign Out
+			</button>
 		</div>
-		<hr class="border-t border-gray-600" />
-		<button on:click={handleClickSignOut} role="menuitem" class="item">
-			<img src={LogoutIcon} alt="logout" class="w-6 h-6 mr-2" />
-			Sign Out
-		</button>
-	</div>
+	{/snippet}
 </Dropdown>
 
 <style>

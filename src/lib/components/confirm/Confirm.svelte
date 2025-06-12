@@ -3,7 +3,7 @@
 	import ConfirmContent from './ConfirmContent.svelte';
 	import { confirmContent, isConfirmOpen } from './confirm';
 
-	$: ({ title, description, cancel, confirm } = $confirmContent);
+	let { title, description, cancel, confirm } = $derived($confirmContent);
 </script>
 
 <Popup bind:open={$isConfirmOpen}>
